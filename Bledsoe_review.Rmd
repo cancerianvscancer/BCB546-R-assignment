@@ -1,0 +1,40 @@
+---
+title: "Bledsoe_review"
+author: "Molly Bledsoe"
+date: "3/21/2021"
+output: html_document
+---
+When I hit "Run all" there was no error that stopped the commands from running, which is good. 
+
+I think under "# data inspection" you have a type of vieq(SNP) instead of view(SNP)
+
+Looking through your commands and the files that they created I think you did a great job!
+
+You're increasing and decreasing files look good and have all of the requirements. For some reason I didn't think about saving them in a text file and only created them in the environment so that's good that you remembered that. 
+
+All of your graphs look good, the only recommendation I'd have is adding titles to them so people know what they're looking at. You're density graph is really cool. I also noticed you don't have your own visualization of a feature in the dataset. 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
