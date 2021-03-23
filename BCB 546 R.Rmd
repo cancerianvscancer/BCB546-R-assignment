@@ -36,12 +36,6 @@ head(SNP)
 ```{r}
 # data inspection
 
-# view(fang)
-# vieq(SNP)
-
-#str(fang)
-#str(SNP)
-
 dim(fang)
 dim(SNP)
 
@@ -50,6 +44,9 @@ class(SNP)
 
 fang[1:10]
 SNP[1:10]
+
+# Summary table for getting counts by chromosome
+as.data.frame(table(SNP$Chromosome, deparse.level = 2), responseName = 'Counts')
 
 ```
 
@@ -75,7 +72,9 @@ SNP_edit <- SNP %>% select(SNP_ID, Chromosome, Position)
 # Merge both files by SNP_ID
 merged_fangSNP <- merge(SNP_edit,tfang, by.x="SNP_ID", by.y="SNP_ID", all = TRUE)
 
-view(merged_fangSNP)
+as_tibble(merged_fangSNP)        # I would suggest using as_tibble() or head()[range_of_columns] to visualize some of the data
+                                 # rather than view(), because when opneinig large files, view() can crash the R session
+tail(as_tibble(merged_fangSNP))  
 
 # select groups from the merged file
 
@@ -100,10 +99,10 @@ rownames(tMaize) <- NULL
 tMaize <- cbind(rnames,tMaize)
 colnames(tMaize)[1] <- "SNP_ID"
 
-view(tMaize)
+as_tibble(tMaize)
 
 merge_Maize <- merge(SNP_edit,tMaize, by = "SNP_ID")
-view(merge_Maize)
+as_tibble(merge_Maize)
 
 # edit Teosinate files - transpose and merge
 
@@ -114,10 +113,10 @@ rownames(tTeosinate) <- NULL
 tTeosinate <- cbind(rnames,tTeosinate)
 colnames(tTeosinate)[1] <- "SNP_ID"
 
-view(tTeosinate)
+as_tibble(tTeosinate)
 
 merge_Teosinate <- merge(SNP_edit, tTeosinate, by = "SNP_ID")
-view(merge_Teosinate)
+as_tibble(merge_Teosinate)
 
 ```
 
@@ -187,17 +186,20 @@ for (i in 1:10) {
 filtered_fangSNP <- filter(merged_fangSNP , Position != "multiple",  Position != "unknown")
 
 ggplot(data = filtered_fangSNP) +
-  geom_bar(mapping = aes(x = Chromosome)) +
+  geom_bar(mapping = aes(x = as.factor(as.double(Chromosome)))) + # as.double sorts chr from 1:10; as.factor transform each chr into a factor 
   ggtitle(label = "SNPs per chromosome") +
-  xlab(label = "Chromosome") +
-  ylab(label = "Number of SNPs") +
+  labs(x = "Chromosome", y = "Number of SNPs") +
   theme_bw()
 
 ggsave(filename = "./Graphs_files/SNPs per chromosome.png", device = "png")
 
 ## Generate density plot to show distribution
 
-ggplot(filtered_fangSNP, aes(x= as.numeric(Position))) + geom_density(aes(fill = Chromosome)) + facet_wrap(~ Chromosome) + theme_linedraw() + labs(x = "Position", y = "Density")
+ggplot(filtered_fangSNP, aes(x= as.numeric(Position)/1000000)) + # Position in megabases instead of bp
+  geom_density(aes(fill = as.factor(as.double(Chromosome)))) +   # sort Labels for Chr on the right side panel from 1:10
+  facet_wrap(~ as.double(Chromosome), scales = "free_x") +       # sort 10 plots from 1 to 10, scales = "free_x" allows plotting each chromosome from their own beggining to their own end (instead of from 0 to max(filtered_fangSNP$Position))
+  theme_linedraw() +
+  labs(x = "Position (Mb)", y = "Density", fill = "Chromosome")  # change label for the legend on the right side
 
 ggsave(filename = "./Graphs_files/SNP Distribution.png" , device = "png")
 
@@ -215,8 +217,12 @@ tidy_fang <- tidy_fang %>%
 
 ## SNPs/ Zygosity in sample
 
-
-ggplot(data = tidy_fang, mapping = aes(x= Sample_ID, fill = new_sequence)) + geom_bar(position = "stack") + theme_classic() + labs(X = "Sample_ID" , y = "Proportion")
+ggplot(data = tidy_fang, mapping = aes(x= Sample_ID, fill = new_sequence)) + 
+  geom_bar(position = "stack") + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + 
+  labs(X = "Sample_ID" , y = "Counts")
 
 ggsave(filename = "./Graphs_files/Zygozity in the sampleID.png" , device = "png")
 
@@ -228,14 +234,3 @@ ggsave(filename = "./Graphs_files/Zygosity-SNP proportion in different groups.pn
 
 
 ```
-
-```{r}
-
-
-
-
-
-
-
-```
-
