@@ -36,11 +36,9 @@ head(SNP)
 ```{r}
 # data inspection
 
-# view(fang)
-# vieq(SNP)
 
-#str(fang)
-#str(SNP)
+str(fang)
+str(SNP)
 
 dim(fang)
 dim(SNP)
@@ -51,6 +49,9 @@ class(SNP)
 fang[1:10]
 SNP[1:10]
 
+# Summary table for getting counts by chromosome
+as.data.frame(table(SNP$Chromosome, deparse.level = 2), responseName = 'Counts')
+
 ```
 
 ```{r}
@@ -60,24 +61,30 @@ SNP[1:10]
 # transpose the fang et al file as data frame 
 tfang <- as.data.frame(t(fang))
 
-# Make smaple names to column names
+# Make sample names to column names
 names(tfang) <- lapply(tfang[1, ], as.character)
 
 # Remove sample names in rows
 tfang <- tfang[-1,]
 
-# To make column of the row names
+# To name the column/variable of the row names
 tfang <- rownames_to_column(tfang, var="SNP_ID")
 
 # create SNP file with SNP_ID, Chromosome and position
 SNP_edit <- SNP %>% select(SNP_ID, Chromosome, Position)
 
+# table for getting counts by chromosome
+#as.data.frame(table(SNP$Chromosome, deparse.level = 2), responseName = 'Counts')
+
 # Merge both files by SNP_ID
 merged_fangSNP <- merge(SNP_edit,tfang, by.x="SNP_ID", by.y="SNP_ID", all = TRUE)
 
-view(merged_fangSNP)
+# Use as_tibble or head()[range of columns] to visualize data
 
-# select groups from the merged file
+as_tibble(merged_fangSNP)        
+
+
+# select groups
 
 ## Maize - ZMMIL, ZMMLR, ZMMMR
 
@@ -100,10 +107,13 @@ rownames(tMaize) <- NULL
 tMaize <- cbind(rnames,tMaize)
 colnames(tMaize)[1] <- "SNP_ID"
 
-view(tMaize)
+# check the edited maize file 
+as_tibble(tMaize)
 
 merge_Maize <- merge(SNP_edit,tMaize, by = "SNP_ID")
-view(merge_Maize)
+
+as_tibble(merge_Maize)
+
 
 # edit Teosinate files - transpose and merge
 
@@ -114,10 +124,14 @@ rownames(tTeosinate) <- NULL
 tTeosinate <- cbind(rnames,tTeosinate)
 colnames(tTeosinate)[1] <- "SNP_ID"
 
-view(tTeosinate)
+# check edited teosinate file
+
+as_tibble(tTeosinate)
 
 merge_Teosinate <- merge(SNP_edit, tTeosinate, by = "SNP_ID")
-view(merge_Teosinate)
+
+as_tibble(merge_Teosinate)
+
 
 ```
 
@@ -161,7 +175,7 @@ Teosinate_replaced <- Teosinate_replaced %>% arrange(.,desc(as.numeric(Position)
 
 ```{r}
 
-# Using for loop to create each - 10 chromosome files
+# Using for loop to create each - 10 chromosome files, write as tsv and save into the respective directory
 for (i in 1:10) {
   Maize_Asc <- filter(merge_Maize, Chromosome == i)
   Maize_Desc <- filter(Maize_replaced, Chromosome == i)
@@ -182,12 +196,13 @@ for (i in 1:10) {
 ```{r}
 ## Data Visulization
 
-# Total SNPs per chromosome
+# Total SNPs per chromosome 
+# added as per reviewer suggestion -as.double sorts chromosome from 1:10; as.factor transform each chromosome into a factor 
 
 filtered_fangSNP <- filter(merged_fangSNP , Position != "multiple",  Position != "unknown")
 
 ggplot(data = filtered_fangSNP) +
-  geom_bar(mapping = aes(x = Chromosome)) +
+  geom_bar(mapping = aes(x = as.factor(as.double(Chromosome)))) + 
   ggtitle(label = "SNPs per chromosome") +
   xlab(label = "Chromosome") +
   ylab(label = "Number of SNPs") +
@@ -197,9 +212,24 @@ ggsave(filename = "./Graphs_files/SNPs per chromosome.png", device = "png")
 
 ## Generate density plot to show distribution
 
-ggplot(filtered_fangSNP, aes(x= as.numeric(Position))) + geom_density(aes(fill = Chromosome)) + facet_wrap(~ Chromosome) + theme_linedraw() + labs(x = "Position", y = "Density")
+#ggplot(filtered_fangSNP, aes(x= as.numeric(Position))) + geom_density(aes(fill = Chromosome)) + facet_wrap(~ Chromosome) + theme_linedraw() + ggtitle(label = " Distribution of SNPs on chromosome") + labs(x = "Position", y = "Density")
+
+
+# Generate density plot to show distribution
+ggplot(filtered_fangSNP, aes(x= as.numeric(Position)/1000000)) + 
+  # Position in megabases instead of bp
+  
+  geom_density(aes(fill = as.factor(as.double(Chromosome)))) + # sort Labels for Chr on the right side panel from 1:10
+  
+  facet_wrap(~ as.double(Chromosome), scales = "free_x") + 
+  # sort 10 plots from 1 to 10, scales = "free_x" allows plotting each chromosome from their own begining to their own end (instead of from 0 to max(filtered_fangSNP$Position))
+  
+  theme_linedraw() +
+  labs(x = "Position (Mb)", y = "Density", fill = "Chromosome") 
+# change label for the legend on the right side
 
 ggsave(filename = "./Graphs_files/SNP Distribution.png" , device = "png")
+
 
 ```
 
@@ -215,25 +245,38 @@ tidy_fang <- tidy_fang %>%
 
 ## SNPs/ Zygosity in sample
 
+ggplot(data = tidy_fang, mapping = aes(x= Sample_ID, fill = new_sequence)) + 
+  geom_bar(position = "stack") + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + 
+  ggtitle(label = "Zygosity per sample")+
+  labs(X = "Sample_ID" , y = "Counts")
 
-ggplot(data = tidy_fang, mapping = aes(x= Sample_ID, fill = new_sequence)) + geom_bar(position = "stack") + theme_classic() + labs(X = "Sample_ID" , y = "Proportion")
-
-ggsave(filename = "./Graphs_files/Zygozity in the sampleID.png" , device = "png")
+ggsave(filename = "./Graphs_files/Zygozity per sample.png" , device = "png")
 
 
 ## SNPs / Zygosity in different groups
+
 ggplot(tidy_fang, aes(x = Group , fill = new_sequence)) + geom_bar(position = "fill") + 
-  theme_bw() + theme(axis.text.x = element_text(size = 5, angle = 90))+ labs(y = "Proportion")
+  theme_bw() + theme(axis.text.x = element_text(size = 5, angle = 90)) + ggtitle(label = "Zygosity in different groups") + labs(y = "Proportion")
+
 ggsave(filename = "./Graphs_files/Zygosity-SNP proportion in different groups.png" , device = "png" )
 
 
 ```
 
 ```{r}
+#  To check proportion of all genotypes in sample - my interest 
+
+ggplot(filter(tidy_fang, Sequence != "?/?") , aes(x = Sample_ID, fill = Sequence)) + 
+  geom_bar(position = "fill") + theme(axis.title.x=element_blank(),axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + ggtitle(label = "Genotypes in each sample") +labs(x = "Sample ID", y = "Proportion")
+
+ggsave(filename = "./Graphs_files/Genotypes in each sample.png" , device = "png")
 
 
-
-
+```
 
 
 
