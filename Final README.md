@@ -1,8 +1,28 @@
 # BCB546-R-assignment
 Contains R markdown file and README file with files generated using code
 
+## Work Flow steps:
+  1. Download the files directly from git hib repository and read as tsv files
+  2. Data Insepections tools - str(), head(), dim()
+  3. Data processing:
+        # Part I 
+          1. transpose and edit Fang et al file as data frame, remove sample names. Also just select SNP_ID, Chromosome, Position from SNP file and finally merge both file-merge_fangSNP by SNP_ID
+          2. Create files based on groups for Maize (ZMMIL, ZMMLR, ZMMMR) and Teosinate (ZMPBA, ZMPIL, ZMPJA) from the merged file
+          3. transpose and process the new data set for Maize and Teosinate to have them ready for further analysis
+          4. create 3 separate directories to store all the files and graphs
+          5.  The files are already selected for the required group so we can use replace the missing values ? with - and name it Maize_replaced. 
+          This file can be used to sort in the descending order.
+          7. Sort the files in asceding order using arrange function() and specifying as.numeric for position
+          8. Sort the files in descensing order using arrange funtion(arrange(desc))using __replaced files
+          9.  Thus now the files are ready to be sorted according to chromosome number 1-10
+          10. Use for loop to filter the merged files based on chromosome number and them write_tsv function to store them
 
+     # Part II
+          1. Data Visualization processing: use filter function to remove missing ,unknown values from SNP file
+          2. use ggplot to generate different graphs as required
 ---
+R code
+
 title: "BCB 546 R assignment"
 author: "Prita"
 date: "3/18/2021"
